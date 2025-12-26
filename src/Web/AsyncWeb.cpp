@@ -112,17 +112,48 @@ void AsyncWeb::setupServerRoutes(AsyncWebServer &server) {
 			var joy1Direzione = document.getElementById("joy1Direzione");
 			var joy1X = document.getElementById("joy1X");
 			var joy1Y = document.getElementById("joy1Y");
+
+            let latestJoyData = {
+                joyx: 0,
+                joyy: 0,
+                joydir: "C"
+            };
+            let intervalId = null;
+            let stopTimeoutId = null;
+
+            function startIntervalSend() {
+                if (intervalId === null) {
+                    intervalId = setInterval(function() {
+                        if (ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ joydata: latestJoyData }));
+                        }
+                    }, 200); // 200msごとに送信
+                }
+                // 1秒間操作がなければ送信停止
+                if (stopTimeoutId !== null) clearTimeout(stopTimeoutId);
+                stopTimeoutId = setTimeout(function() {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }, 1000);
+            }
+            
 			var Joy1 = new JoyStick('joy1Div', {}, function(stickData) {
 				joy1Direzione.textContent = stickData.cardinalDirection;
 				joy1X.textContent = stickData.x;
 				joy1Y.textContent = stickData.y;
-				ws.send(JSON.stringify({
-					joydata: {
-						joyx: parseInt(stickData.x, 10),
-						joyy: parseInt(stickData.y, 10),
-						joydir: stickData.cardinalDirection
-					}
-				}));
+                latestJoyData = {
+                    joyx: parseInt(stickData.x, 10),
+                    joyy: parseInt(stickData.y, 10),
+                    joydir: stickData.cardinalDirection
+                };
+                startIntervalSend();
+				// ws.send(JSON.stringify({
+				// 	joydata: {
+				// 		joyx: parseInt(stickData.x, 10),
+				// 		joyy: parseInt(stickData.y, 10),
+				// 		joydir: stickData.cardinalDirection
+				// 	}
+				// }));
 			});
 		</script>
 	</body>
