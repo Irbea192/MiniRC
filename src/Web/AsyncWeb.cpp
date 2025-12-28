@@ -89,6 +89,9 @@ void AsyncWeb::setupServerRoutes(AsyncWebServer &server) {
 	</head>
 	<body>
 		<div class="center-container">
+			<div style="margin-top:20px;">
+                <img id="camera-stream" src="/camera" style="max-width: 100%; width: 480px; border:1px solid #333;">
+            </div>
 			<div class="info">
 				<p>バッテリ電圧: <span id='vbatt'>--</span> V</p>
 			</div>
@@ -108,6 +111,12 @@ void AsyncWeb::setupServerRoutes(AsyncWebServer &server) {
 					document.getElementById('vbatt').innerText = data.vbatt.toFixed(2);
 				}
 			};
+
+			function reloadCamera() {
+                const img = document.getElementById('camera-stream');
+                img.src = '/camera?ts=' + new Date().getTime();
+            }
+            setInterval(reloadCamera, 200); // 200msごとに更新
 
 			var joy1Direzione = document.getElementById("joy1Direzione");
 			var joy1X = document.getElementById("joy1X");
@@ -161,6 +170,19 @@ void AsyncWeb::setupServerRoutes(AsyncWebServer &server) {
         )rawliteral";
         request->send(200, "text/html", html);
     });
+
+	// ...既存のコード...
+	server.on("/camera", HTTP_GET, [](AsyncWebServerRequest *request){
+		camera_fb_t *fb = esp_camera_fb_get();
+		if (!fb) {
+			request->send(500, "text/plain", "Camera capture failed");
+			return;
+		}
+		AsyncWebServerResponse *response = request->beginResponse_P(200, "image/jpeg", fb->buf, fb->len);
+		response->addHeader("Cache-Control", "no-store");
+		request->send(response);
+		esp_camera_fb_return(fb);
+	});
 }
 
 void AsyncWeb::notifyClients(float vbatt){

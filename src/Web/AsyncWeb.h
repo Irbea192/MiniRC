@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include "esp_camera.h"
 
 class AsyncWeb{
     private:
