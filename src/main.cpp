@@ -13,8 +13,8 @@
 #include "AsyncWeb.h"
 #include "Buzzer.h"
 
-const int offsetA = 1;
-const int offsetB = 1;
+const int offsetA = -1;
+const int offsetB = -1;
 
 const uint8_t BattVoltPin = A0;
 const uint8_t PWMA = D1;
