@@ -14,7 +14,7 @@
 #include "Buzzer.h"
 
 const int offsetA = -1;
-const int offsetB = -1;
+const int offsetB = 1;
 
 const uint8_t BattVoltPin = A0;
 const uint8_t PWMA = D1;
@@ -41,22 +41,36 @@ Servo myServo;
 Motor motorA(AIN1, AIN2, PWMA, offsetA, STBY); // AIN1, AIN2, PWMA
 Motor motorB(BIN1, BIN2, PWMB, offsetB, STBY); // BIN1, BIN2, PWMB
 
+#define RIGHT 1
+#define LEFT -1
+
 typedef struct {
     int8_t joyx = 0;
     int8_t joyy = 0;
+    int8_t old_dir = 0;
     char joydir[3] = "";
 } JoyStickData;
 JoyStickData joyData;
+
+// 補正値
+const int correction_R = 60;
+const int correction_L = -50;   
 
 void servoWriteAngle(){
     // if(joyData.joyx == angle) return;
 
     if(joyData.joyx <= -40){
-        // マッピング
+        joyData.old_dir = LEFT;
         angle = map(joyData.joyx, -100, -40, 0, 89);
     } else if(joyData.joyx >= 40){
-        // マッピング
+        joyData.old_dir = RIGHT;
         angle = map(joyData.joyx, 40, 100, 91, 180);
+    } else if(joyData.old_dir == RIGHT){
+        // 0に戻した際にサーボが完全にもとに戻らないので補正
+        angle = map(correction_L, 40, 100, 91, 180);
+    } else if(joyData.old_dir == LEFT){
+        // 0に戻した際にサーボが完全にもとに戻らないので補正
+        angle = map(correction_R, -100, -40, 0, 89);
     } else{
         angle = 90; // 中立位置
     }
@@ -111,7 +125,6 @@ float readBatVolt(uint8_t pin){
 
 void setup() {
 	Serial.begin(115200);
-    while(!Serial);
     delay(8000);
 
     Serial.printf("Setup start !\n");
